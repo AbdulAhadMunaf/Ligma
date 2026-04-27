@@ -170,3 +170,179 @@ If a user does not meet the required conditions:
 
 - Group Check: If the user does not belong to any specified group, a PermissionDenied exception is raised.
 - Permission Check: If permissions are specified and the user does not have any of the required permissions, a PermissionDenied exception is raised.
+
+## Collaboration Backend (LIGMA)
+
+This repository now includes a room-based collaboration backend with event sourcing, node-level RBAC, replay support, and text conflict handling.
+
+### Implemented Components
+
+- Room model + membership roles (`owner`, `editor`, `viewer`)
+- Append-only immutable room event stream
+- Snapshot projection for fast scene hydration
+- Node-level ACL (`node_id -> allowed_roles`)
+- Delta mutation processing (`operations` contract)
+- Replay endpoint for reconnect (`after_sequence`)
+- Text patch conflict handling with deterministic tie-break
+- Centrifugo integration points for realtime publish/subscribe
+
+Core app path: `apps/collaboration/`
+
+### Data Model Summary
+
+- `CollaborationRoom`: room metadata and `last_event_sequence`
+- `CollaborationRoomMember`: per-user room role
+- `CollaborationRoomEvent`: immutable event stream (`sequence`, payload, actor, timestamp)
+- `CollaborationRoomSnapshot`: current projected scene (`elements`, `appState`, `files`, `libraryItems`)
+- `CollaborationNodeAccess`: node-level lock policy (`node_id`, `allowed_roles`)
+- `CollaborationTextOperation`: applied text ops (`base_version`, `applied_version`, `client_id`, `client_sequence`)
+
+### API Endpoints
+
+Base path: `/api/collaboration/`
+
+`POST /rooms/`: create room
+
+`GET /rooms/`: list rooms for current user
+
+`GET /rooms/<room_uuid>/`: room details
+
+`GET /rooms/<room_uuid>/scene/`: hydration payload for Excalidraw
+
+`POST /rooms/<room_uuid>/members/`: add/update member role (owner only)
+
+`GET /rooms/<room_uuid>/members/`: list members
+
+`POST /rooms/<room_uuid>/node-access/`: set per-node ACL (owner only)
+
+`GET /rooms/<room_uuid>/node-access/`: list node ACL entries
+
+`POST /rooms/<room_uuid>/events/`: append event (scene or deltas)
+
+`GET /rooms/<room_uuid>/events/?after_sequence=<n>&limit=<n>`: list events
+
+`GET /rooms/<room_uuid>/replay/?after_sequence=<n>&limit=<n>`: replay missed events
+
+`POST /rooms/<room_uuid>/realtime-token/`: connection/subscription tokens
+
+`POST /centrifugo/publish/`: publish proxy endpoint used by Centrifugo
+
+### Event-Sourcing Contract
+
+All canvas mutations are stored as immutable events. Current state is a projection (`CollaborationRoomSnapshot`) derived from the event stream.
+
+Two accepted payload shapes:
+
+1. Scene snapshot shape
+
+```json
+{
+  "payload": {
+    "elements": [],
+    "appState": {},
+    "files": {},
+    "libraryItems": []
+  }
+}
+```
+
+2. Delta operations shape
+
+```json
+{
+  "payload": {
+    "metadata": {
+      "client_id": "tab-a",
+      "client_sequence_start": 100
+    },
+    "operations": [
+      {
+        "op": "element.create",
+        "element": {"id": "node-1", "type": "rectangle", "x": 0, "y": 0}
+      },
+      {
+        "op": "text.patch",
+        "node_id": "text-2",
+        "text_delta": {
+          "position": 4,
+          "delete_count": 0,
+          "insert_text": "X",
+          "base_version": 12
+        }
+      }
+    ]
+  }
+}
+```
+
+Supported `op` values:
+
+- `element.create`
+- `element.update`
+- `element.delete`
+- `text.patch`
+- `node_acl.set`
+- `app_state.update`
+- `files.update`
+
+### Node-Level RBAC
+
+Node lock policy is stored in `CollaborationNodeAccess`.
+
+- If node has no ACL entry: room-level edit permission applies.
+- If node has ACL entry: actor role must be in `allowed_roles`.
+- `node_acl.set` can only be performed by room `owner`.
+- Enforcement is server-side during mutation validation.
+
+### Text Conflict Handling
+
+Text patches use:
+
+- `text_delta.base_version`
+- `text_delta.position`
+- `text_delta.delete_count`
+- `text_delta.insert_text`
+- `text_delta.client_id`
+- `text_delta.client_sequence`
+
+Behavior:
+
+- Incoming `text.patch` is rebased over already-applied operations with higher version.
+- Tie-break for same-position inserts is deterministic by `(client_id, client_sequence)`, not arrival order.
+- Duplicate retransmits are idempotent via unique key `(room, node_id, client_id, client_sequence)`.
+- If `client_id` or `client_sequence` is missing on an op, backend can infer from payload metadata (`client_id`, `client_sequence_start` or `client_sequence`).
+
+### Reconnect & Replay
+
+Clients should store last acknowledged event sequence and request:
+
+`GET /rooms/<room_uuid>/replay/?after_sequence=<last_seen>`
+
+Response:
+
+- `events`: missed events only
+- `from_sequence`: requested base
+- `to_sequence`: current room head
+- `has_more`: whether additional replay calls are needed
+
+### Centrifugo Config Variables
+
+Required backend settings:
+
+- `CENTRIFUGO_HMAC_SECRET`
+- `CENTRIFUGO_HTTP_API_KEY`
+- `CENTRIFUGO_API_URL`
+- `CENTRIFUGO_TOKEN_TTL_SECONDS`
+- `CENTRIFUGO_HTTP_TIMEOUT_SECONDS`
+
+### Test Commands
+
+```bash
+pytest -vv apps/collaboration/tests/test_room_api.py
+pytest -vv apps/collaboration/tests/test_room_members_api.py
+pytest -vv apps/collaboration/tests/test_room_events_api.py
+```
+
+### Current Scope Note
+
+Current text conflict support is an OT-style deterministic rebase baseline for same-node text operations. It is not yet a full CRDT implementation.

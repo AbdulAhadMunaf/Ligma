@@ -40,6 +40,7 @@ api_urlpatterns = [
     path("users/", include("apps.users.api.urls")),
     path("settings/", include("apps.settings.urls")),
     path("files/", include("apps.files.api.urls")),
+    path("collaboration/", include("apps.collaboration.api.urls")),
 ]
 
 

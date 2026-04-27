@@ -59,6 +59,7 @@ DJANGO_APPS = [
 LOCAL_APPS = [
     "apps.users",
     "apps.files",
+    "apps.collaboration",
 ]
 THIRD_PARTY_APPS = [
     "rest_framework",
@@ -229,6 +230,12 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+
+CENTRIFUGO_HMAC_SECRET = env("CENTRIFUGO_HMAC_SECRET", default="development-secret")
+CENTRIFUGO_HTTP_API_KEY = env("CENTRIFUGO_HTTP_API_KEY", default="")
+CENTRIFUGO_API_URL = env("CENTRIFUGO_API_URL", default="http://localhost:8100/api")
+CENTRIFUGO_TOKEN_TTL_SECONDS = env.int("CENTRIFUGO_TOKEN_TTL_SECONDS", default=3600)
+CENTRIFUGO_HTTP_TIMEOUT_SECONDS = env.int("CENTRIFUGO_HTTP_TIMEOUT_SECONDS", default=5)
 
 
 # DATABASE_ROUTERS = ["utils.db.routers.DBRouter"]

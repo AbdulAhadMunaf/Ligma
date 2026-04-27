@@ -1,0 +1,39 @@
+{
+  "client": {
+    "token": {
+      "hmac_secret_key": "<hmac-secret-key>"
+    },
+    "allowed_origins": ["*"]
+  },
+  "http_api": {
+    "key": "<backends http api key>"
+  },
+  "admin": {
+    "password": "<password for admin>",
+    "secret": "<secret>",
+    "enabled": true
+  },
+  "channel": {
+    "without_namespace": {
+      "allow_user_limited_channels": true
+    },
+    "namespaces": [
+      {
+        "name": "collab",
+        "presence": true,
+        "join_leave": true,
+        "history_size": 0,
+        "history_ttl": "0s",
+        "allow_subscribe_for_client": false,
+        "allow_publish_for_subscriber": true,
+        "publish_proxy_enabled": true,
+        "channel_regex": "^room:[0-9a-fA-F-]+$"
+      }
+    ],
+    "proxy": {
+      "publish": {
+        "endpoint": "http://backend:8000/api/collaboration/centrifugo/publish/"
+      }
+    }
+  }
+}

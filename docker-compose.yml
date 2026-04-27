@@ -1,5 +1,18 @@
 version: '3'
 services:
+
+  centrifugo:
+    image: centrifugo/centrifugo:v6
+    restart: always
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    ports:
+      - 8100:8000
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
   backend:
     build: .
     command: sh -c "python manage.py collectstatic --noinput && uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --lifespan off"
@@ -104,3 +117,5 @@ volumes:
 networks:
   default:
   db_network:
+
+
