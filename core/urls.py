@@ -41,6 +41,7 @@ api_urlpatterns = [
     path("settings/", include("apps.settings.urls")),
     path("files/", include("apps.files.api.urls")),
     path("collaboration/", include("apps.collaboration.api.urls")),
+    path("ai-tasks/", include("apps.ai_tasks.api.urls")),
 ]
 
 

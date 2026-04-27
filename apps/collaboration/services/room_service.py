@@ -490,6 +490,13 @@ class CollaborationRoomService:
             snapshot.updated_by = actor
             snapshot.save()
 
+        if cls._should_queue_ai_pipeline(event_type=event.event_type, payload=normalized_event["payload"]):
+            from apps.ai_tasks.tasks import process_room_event
+
+            transaction.on_commit(
+                lambda event_uuid=str(event.event_uuid): process_room_event.delay(event_uuid)
+            )
+
         return event
 
     @classmethod
@@ -551,3 +558,9 @@ class CollaborationRoomService:
         if len(parts) != 3 or parts[0] != "collab" or parts[1] != "room":
             raise ValidationError({"channel": "Unsupported collaboration channel."})
         return parts[2]
+
+    @classmethod
+    def _should_queue_ai_pipeline(cls, *, event_type, payload):
+        from apps.ai_tasks.services.pipeline_service import AIPipelineService
+
+        return AIPipelineService.should_queue_event(event_type=event_type, payload=payload)

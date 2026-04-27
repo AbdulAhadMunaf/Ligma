@@ -61,6 +61,7 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_BROKER_URL = "memory://"
 CELERY_RESULT_BACKEND = "memory://"
+AI_PIPELINE_ENABLED = True
 
 # Skip the migrations by setting "MIGRATION_MODULES"
 # to the DisableMigrations class defined above

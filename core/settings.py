@@ -60,6 +60,7 @@ LOCAL_APPS = [
     "apps.users",
     "apps.files",
     "apps.collaboration",
+    "apps.ai_tasks",
 ]
 THIRD_PARTY_APPS = [
     "rest_framework",
@@ -236,6 +237,20 @@ CENTRIFUGO_HTTP_API_KEY = env("CENTRIFUGO_HTTP_API_KEY", default="")
 CENTRIFUGO_API_URL = env("CENTRIFUGO_API_URL", default="http://localhost:8100/api")
 CENTRIFUGO_TOKEN_TTL_SECONDS = env.int("CENTRIFUGO_TOKEN_TTL_SECONDS", default=3600)
 CENTRIFUGO_HTTP_TIMEOUT_SECONDS = env.int("CENTRIFUGO_HTTP_TIMEOUT_SECONDS", default=5)
+
+OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", default="")
+OPENROUTER_BASE_URL = env("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
+OPENROUTER_APP_NAME = env("OPENROUTER_APP_NAME", default="LIGMA")
+OPENROUTER_HTTP_REFERER = env("OPENROUTER_HTTP_REFERER", default="http://localhost:8000")
+
+AI_TIER1_MODEL = env("AI_TIER1_MODEL", default="openrouter/auto")
+AI_TIER2_MODEL = env("AI_TIER2_MODEL", default="openrouter/auto")
+AI_TIER3_MODEL = env("AI_TIER3_MODEL", default="openrouter/auto")
+AI_PIPELINE_ENABLED = env.bool("AI_PIPELINE_ENABLED", default=True)
+AI_DEBOUNCE_MS = env.int("AI_DEBOUNCE_MS", default=1200)
+AI_ROOM_COOLDOWN_MS = env.int("AI_ROOM_COOLDOWN_MS", default=3000)
+AI_PATCH_THRESHOLD_X = env.int("AI_PATCH_THRESHOLD_X", default=280)
+AI_PATCH_THRESHOLD_Y = env.int("AI_PATCH_THRESHOLD_Y", default=220)
 
 
 # DATABASE_ROUTERS = ["utils.db.routers.DBRouter"]

@@ -1,0 +1,3 @@
+from apps.ai_tasks.services.inference_service import AITaskInferenceService
+from apps.ai_tasks.services.patch_proposal_service import AIPatchProposalService
+from apps.ai_tasks.services.pipeline_service import AIPipelineService
