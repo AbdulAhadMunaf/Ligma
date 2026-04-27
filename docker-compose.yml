@@ -1,0 +1,91 @@
+version: '3'
+services:
+  backend:
+    build: .
+    command: uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --lifespan off
+    volumes:
+      - .:/app
+      - ./staticfiles:/staticfiles
+    ports:
+      - "80:8000"
+    depends_on:
+      - redis
+    restart: always
+
+  celery-worker:
+    build: .
+    command: celery -A core worker --loglevel=info -c 4  # Adjust the number of workers (4 in this example)
+    volumes:
+      - .:/app
+    depends_on:
+      - backend
+      - redis
+    restart: always
+
+
+  celery-beat:
+    build: .
+    command: celery -A core beat -l info -S django
+    volumes:
+      - .:/app
+    depends_on:
+      - backend
+      - celery-worker
+      - redis
+    restart: always
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    restart: always
+
+  onlogs:
+    image: devforth/onlogs
+    restart: always
+    environment:
+      - ADMIN_USERNAME=${ONLOGS_ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ONLOGS_ADMIN_PASSWORD}
+      - PORT=8798
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers # if you want to delete duplicating logs from docker
+      - onlogs-volume:/leveldb
+    ports:
+      - "8798:8798"
+
+  db:
+    image: postgres:17.0
+    container_name: backend_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - db_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: backend_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:5050"
+    depends_on:
+      - db
+    networks:
+      - db_network
+    restart: always
+
+volumes:
+  onlogs-volume:
+  pgdata:
+
+
+networks:
+  db_network:

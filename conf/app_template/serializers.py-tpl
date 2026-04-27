@@ -1,0 +1,5 @@
+from rest_framework import serializers
+
+
+class {{ app_name | title }}ListSerializer(serializers.Serializer):
+    pass

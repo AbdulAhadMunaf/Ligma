@@ -1,0 +1,35 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "unit_test_settings"
+python_files = "test_*.py"
+addopts = "--nomigrations --ignore=venv -p no:warnings"
+django_debug_mode = true
+
+[tool.ruff]
+line-length = 150
+target-version = "py39"
+extend-select = [
+  "T20", # enforce flake8-print (T20) rules (https://docs.astral.sh/ruff/rules/#flake8-print-t20)
+  "N", # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+  "DJ012",
+]
+ignore = [
+    "E712",  # Allow using if x == False, as it's not always equivalent to if x.
+    "E501",  # Supress line-too-long warnings: trust black's judgement on this one.
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.isort]
+profile = "black"
+py_version=39
+skip = ["venv", "migrations"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+force-exclude = '''
+/(
+  migrations
+)/
+'''

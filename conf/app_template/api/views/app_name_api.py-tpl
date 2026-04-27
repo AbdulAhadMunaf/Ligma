@@ -1,0 +1,30 @@
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from utils.response.resp import APIResponse
+from rest_framework.generics import ListAPIView
+
+class {{ app_name | title }}ListCreateDeleteAPI(ListAPIView):
+    serializer_class = {{ app_name | title }}ListSerializer
+
+    def get_queryset(self):
+        pass
+
+    @swagger_auto_schema(
+        tags=["{{ app_name }}"]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+    @swagger_auto_schema(
+        tags=["{{ app_name }}"]
+    )
+    def post(self, request, *args, **kwargs):
+        pass
+
+    @swagger_auto_schema(
+        tags=["{{ app_name }}"]
+    )
+    def delete(self, request, *args, **kwargs):
+        pass

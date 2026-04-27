@@ -1,0 +1,93 @@
+Django==4.2.15
+
+gunicorn==22.0.0
+uvicorn==0.23.2
+
+# for sentry error monitoring
+sentry-sdk>=2.8.0
+
+# for creating REST APIs
+djangorestframework==3.15.2
+
+# for swagger doc
+drf-yasg==1.21.8
+
+# to support json field
+django-jsonfield==1.4.1
+
+# token
+djangorestframework-simplejwt==5.3.1
+
+# for CORS
+django-cors-headers==4.1.0
+
+# for testing
+pytest==7.4.0
+pytest-django==4.5.2
+factory_boy==3.2.1
+pytest-cov==4.1.0
+
+
+# for code formatting
+black==22.8.0
+
+# mysql python support for Python
+mysqlclient
+
+# postgresql support for Python
+psycopg2-binary==2.9.7
+
+
+# for getting env
+django-environ==0.10.0
+
+# python linter
+ruff==0.0.281
+
+# for download file as excel
+openpyxl==3.1.2
+
+# for generating pdf
+weasyprint==62.3
+
+
+# as name defined - for git pre-commit
+pre-commit==3.3.3
+
+
+redis==4.4.4
+
+# Freeze time for tests
+freezegun==1.2.2
+
+# celery for running jobs
+celery==5.3.4
+# run task on schedule
+django-celery-beat==2.5.0
+
+djangorestframework-api-key==3.0.0
+
+# for serving static files
+whitenoise==6.6.0
+
+# Bypasses ALLOWED_HOSTS for the purposes of load balancers
+django-lb-health-check==1.0.1
+
+requests
+
+
+# used for password reset token
+itsdangerous==2.2.0
+
+kafka-python==2.0.2
+
+
+django-storages==1.14.4
+
+azure-storage-blob==12.14.1
+
+pydantic>=2.0
+
+
+# for google cloud storage
+google-cloud-storage==2.19.0
