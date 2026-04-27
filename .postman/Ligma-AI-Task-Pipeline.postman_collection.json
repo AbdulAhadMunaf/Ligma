@@ -1,0 +1,357 @@
+{
+  "info": {
+    "_postman_id": "5e7ef4b2-8f8d-4f8f-8f33-5d7b2d0e2c91",
+    "name": "Ligma AI Task Pipeline",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Manual request chain for collaboration events and the AI task pipeline. Use with the Ligma local environment."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "room_uuid",
+      "value": ""
+    },
+    {
+      "key": "event_uuid",
+      "value": ""
+    },
+    {
+      "key": "job_id",
+      "value": ""
+    },
+    {
+      "key": "task_uid",
+      "value": ""
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Collaboration Room",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/collaboration/rooms/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "collaboration",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman AI room\",\n  \"metadata\": {\n    \"created_via\": \"postman\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('creates room successfully', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('returns a room uuid', function () {",
+              "  pm.expect(json.data.room_uuid).to.be.a('string');",
+              "});",
+              "pm.environment.set('room_uuid', json.data.room_uuid);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Semantic Collaboration Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/collaboration/rooms/{{room_uuid}}/events/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "collaboration",
+            "rooms",
+            "{{room_uuid}}",
+            "events"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payload\": {\n    \"operations\": [\n      {\n        \"op\": \"element.create\",\n        \"element\": {\n          \"id\": \"task-note-1\",\n          \"type\": \"text\",\n          \"x\": 120,\n          \"y\": 80,\n          \"text\": \"Fix login bug\"\n        }\n      }\n    ]\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('stores event successfully', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('returns event payload', function () {",
+              "  pm.expect(json.data.event.sequence).to.be.a('number');",
+              "  pm.expect(json.data.event.event_uuid).to.be.a('string');",
+              "});",
+              "pm.environment.set('event_uuid', json.data.event.event_uuid);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rerun AI Pipeline For Room",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ai-tasks/rooms/{{room_uuid}}/rerun/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ai-tasks",
+            "rooms",
+            "{{room_uuid}}",
+            "rerun"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"after_sequence\": 0,\n  \"limit\": 50\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('rerun succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('returns processed jobs', function () {",
+              "  pm.expect(json.data.processed_count).to.be.at.least(0);",
+              "  pm.expect(json.data.processed_job_ids).to.be.an('array');",
+              "});",
+              "if (json.data.processed_job_ids && json.data.processed_job_ids.length > 0) {",
+              "  pm.environment.set('job_id', String(json.data.processed_job_ids[0]));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get AI Tasks",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ai-tasks/rooms/{{room_uuid}}/tasks/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ai-tasks",
+            "rooms",
+            "{{room_uuid}}",
+            "tasks"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('task list request succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('returns a task array', function () {",
+              "  pm.expect(json.data.tasks).to.be.an('array');",
+              "});",
+              "if (json.data.tasks && json.data.tasks.length > 0) {",
+              "  pm.environment.set('task_uid', json.data.tasks[0].task_uid);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get AI Job Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ai-tasks/rooms/{{room_uuid}}/jobs/{{job_id}}/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ai-tasks",
+            "rooms",
+            "{{room_uuid}}",
+            "jobs",
+            "{{job_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('job status request succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('returns a job record', function () {",
+              "  pm.expect(json.data.job.id).to.be.a('number');",
+              "  pm.expect(json.data.job.status).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get AI Job Trace",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ai-tasks/rooms/{{room_uuid}}/jobs/{{job_id}}/trace/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ai-tasks",
+            "rooms",
+            "{{room_uuid}}",
+            "jobs",
+            "{{job_id}}",
+            "trace"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('job trace request succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('trace contains patch snapshots and inferences', function () {",
+              "  pm.expect(json.data.patch_snapshots).to.be.an('array');",
+              "  pm.expect(json.data.patch_inferences).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Apply AI Feedback",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ai-tasks/rooms/{{room_uuid}}/tasks/{{task_uid}}/feedback/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ai-tasks",
+            "rooms",
+            "{{room_uuid}}",
+            "tasks",
+            "{{task_uid}}",
+            "feedback"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"done\",\n  \"priority\": \"high\",\n  \"confidence\": 0.95,\n  \"metadata\": {\n    \"reviewed_by\": \"postman\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('feedback request succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('feedback changes task status and priority', function () {",
+              "  pm.expect(json.data.task.status).to.eql('done');",
+              "  pm.expect(json.data.task.priority).to.eql('high');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
