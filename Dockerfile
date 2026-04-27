@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 # Set environment variables for Python buffering and prevent Python from writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -26,7 +26,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the current directory contents into the container at /app
 COPY . /app/
-RUN python manage.py collectstatic --noinput
 
 # Expose the port that the application runs on
 EXPOSE 8000

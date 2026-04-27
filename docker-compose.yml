@@ -2,7 +2,8 @@ version: '3'
 services:
   backend:
     build: .
-    command: uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --lifespan off
+    command: sh -c "python manage.py collectstatic --noinput && uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --lifespan off"
+    env_file: .env
     volumes:
       - .:/app
       - ./staticfiles:/staticfiles
@@ -10,28 +11,41 @@ services:
       - "80:8000"
     depends_on:
       - redis
+      - db
+    networks:
+      - default
+      - db_network
     restart: always
 
   celery-worker:
     build: .
-    command: celery -A core worker --loglevel=info -c 4  # Adjust the number of workers (4 in this example)
+    command: celery -A core worker --loglevel=info -c 4
+    env_file: .env
     volumes:
       - .:/app
     depends_on:
       - backend
       - redis
+      - db
+    networks:
+      - default
+      - db_network
     restart: always
-
 
   celery-beat:
     build: .
     command: celery -A core beat -l info -S django
+    env_file: .env
     volumes:
       - .:/app
     depends_on:
       - backend
       - celery-worker
       - redis
+      - db
+    networks:
+      - default
+      - db_network
     restart: always
 
   redis:
@@ -49,7 +63,7 @@ services:
       - PORT=8798
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers:/var/lib/docker/containers # if you want to delete duplicating logs from docker
+      - /var/lib/docker/containers:/var/lib/docker/containers
       - onlogs-volume:/leveldb
     ports:
       - "8798:8798"
@@ -88,4 +102,5 @@ volumes:
 
 
 networks:
+  default:
   db_network:
