@@ -227,6 +227,113 @@ Base path: `/api/collaboration/`
 
 `POST /centrifugo/publish/`: publish proxy endpoint used by Centrifugo
 
+## AI Task Pipeline (LIGMA)
+
+This repository also includes an AI task extraction pipeline that listens to collaboration events, builds patch groups from changed nodes, infers task-like items, and stores an authoritative task projection per room.
+
+### Implemented Components
+
+- Room-event trigger from the collaboration append flow
+- Patch clustering and content extraction from room snapshots
+- Task projection storage and history tracking
+- AI task list, rerun, trace, and feedback endpoints
+- TASK_UPDATE broadcast path through the existing Centrifugo service
+
+Core app path: `apps/ai_tasks/`
+
+### API Endpoints
+
+Base path: `/api/ai-tasks/`
+
+`GET /rooms/<room_uuid>/tasks/`: list the current authoritative task projection
+
+`GET /rooms/<room_uuid>/jobs/<job_id>/`: inspect a pipeline job
+
+`GET /rooms/<room_uuid>/jobs/<job_id>/trace/`: inspect patch and inference traces
+
+`POST /rooms/<room_uuid>/rerun/`: rerun inference for a room window
+
+`POST /rooms/<room_uuid>/tasks/<task_uid>/feedback/`: apply a human correction to a task
+
+### Postman Walkthrough
+
+Use the same auth you use for the collaboration APIs. If you authenticate with JWT, add this header to every request:
+
+`Authorization: Bearer <access_token>`
+
+Suggested request order:
+
+1. Create a room.
+   - `POST /api/collaboration/rooms/`
+   - Body:
+   ```json
+   {
+     "name": "Postman AI room"
+   }
+   ```
+
+2. Add a semantic event that should trigger the AI pipeline.
+   - `POST /api/collaboration/rooms/<room_uuid>/events/`
+   - Body:
+   ```json
+   {
+     "payload": {
+       "operations": [
+         {
+           "op": "element.create",
+           "element": {
+             "id": "task-note-1",
+             "type": "text",
+             "x": 120,
+             "y": 80,
+             "text": "Fix login bug"
+           }
+         }
+       ]
+     }
+   }
+   ```
+
+3. If you want a deterministic pass, rerun the AI pipeline.
+   - `POST /api/ai-tasks/rooms/<room_uuid>/rerun/`
+   - Body:
+   ```json
+   {
+     "after_sequence": 0,
+     "limit": 50
+   }
+   ```
+
+4. Inspect generated tasks.
+   - `GET /api/ai-tasks/rooms/<room_uuid>/tasks/`
+
+5. Inspect the trace for a job.
+   - `GET /api/ai-tasks/rooms/<room_uuid>/jobs/<job_id>/`
+   - `GET /api/ai-tasks/rooms/<room_uuid>/jobs/<job_id>/trace/`
+
+6. Apply feedback to a task.
+   - `POST /api/ai-tasks/rooms/<room_uuid>/tasks/<task_uid>/feedback/`
+   - Body:
+   ```json
+   {
+     "status": "done",
+     "priority": "high",
+     "confidence": 0.95,
+     "metadata": {
+       "reviewed_by": "manual-postman"
+     }
+   }
+   ```
+
+What to verify:
+
+- Semantic collaboration events return `201` and create an AI job after commit.
+- `GET /api/ai-tasks/rooms/<room_uuid>/tasks/` returns one or more tasks after a rerun.
+- The trace endpoint shows patch snapshots and patch inference records.
+- Feedback changes task fields and creates history.
+
+If you want, I can generate a ready-to-import Postman collection JSON next.
+
 ### Event-Sourcing Contract
 
 All canvas mutations are stored as immutable events. Current state is a projection (`CollaborationRoomSnapshot`) derived from the event stream.
