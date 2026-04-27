@@ -223,3 +223,4 @@ terraform.rc
 
 staticfiles
 docker-compose.dev.yml
+centrifugo/config.json
